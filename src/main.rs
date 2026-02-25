@@ -1,10 +1,11 @@
-// init, add, get, list, delete
-
+// init, add, list, delete
+mod store;
 use clap::{Arg, Command};
 
 fn main() {
     let matches = Command::new("pwngr")
         .about("A simple password manager")
+        .subcommand_required(true) // a command should always be provided
         .subcommand(Command::new("init").about("Initialize appilcation"))
         .subcommand(
             Command::new("add")
@@ -20,9 +21,19 @@ fn main() {
         )
         .get_matches();
 
+    let subcommand = matches.subcommand();
+
+    if !matches!(subcommand, Some(("init", _))) && !store::is_initialized() {
+        eprintln!("Vault not initialized. Run `init` first.");
+        std::process::exit(1);
+    }
+
     match matches.subcommand() {
         Some(("init", _)) => {
             println!("Initializing application ");
+            if let Err(e) = store::create_file() {
+                eprintln!("Intitalizing failed. Something went wrong. {}", e)
+            }
         }
 
         Some(("add", sub_matches)) => {
